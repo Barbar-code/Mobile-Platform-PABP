@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/game.dart';
 import '../services/api_service.dart';
 
-// Enum untuk merepresentasikan 3 state (Loading, Success, Error)
 enum GameState { loading, loaded, error }
 
 class GameProvider with ChangeNotifier {
@@ -10,26 +9,44 @@ class GameProvider with ChangeNotifier {
   GameState _state = GameState.loading;
   String _errorMessage = '';
 
-  // Getter agar data bisa dibaca oleh UI
   List<Game> get games => _games;
   GameState get state => _state;
   String get errorMessage => _errorMessage;
 
   final ApiService _apiService = ApiService();
 
-  // Fungsi untuk mengambil data dan merubah state UI
+  // READ
   Future<void> fetchGames() async {
     _state = GameState.loading;
-    notifyListeners(); // Perintahkan UI untuk menampilkan animasi muter-muter (loading)
-
+    notifyListeners();
     try {
       _games = await _apiService.getGames();
-      _state = GameState.loaded; // Perintahkan UI menampilkan daftar game
+      _state = GameState.loaded;
     } catch (e) {
-      _state = GameState.error; // Perintahkan UI menampilkan pesan error
+      _state = GameState.error;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     }
+    notifyListeners();
+  }
 
-    notifyListeners(); // Update layar dengan state yang baru
+  // CREATE
+  Future<bool> addGame(String title, String genre, String developer) async {
+    bool success = await _apiService.addGame(title, genre, developer);
+    if (success) await fetchGames(); // Refresh data otomatis jika sukses
+    return success;
+  }
+
+  // UPDATE
+  Future<bool> updateGame(int id, String title, String genre, String developer) async {
+    bool success = await _apiService.updateGame(id, title, genre, developer);
+    if (success) await fetchGames();
+    return success;
+  }
+
+  // DELETE
+  Future<bool> deleteGame(int id) async {
+    bool success = await _apiService.deleteGame(id);
+    if (success) await fetchGames();
+    return success;
   }
 }
